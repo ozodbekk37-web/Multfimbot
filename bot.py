@@ -386,12 +386,50 @@ def subscribe_keyboard():
     )
 
     return kb
-    # =========================
-# KINO QO‘SHISH — FAQAT ADMIN
+# =========================
+# ADMIN KINO QO‘SHISH
 # =========================
 
 admin_add_state = {}
 
+
+def add_movie_keyboard():
+    kb = types.InlineKeyboardMarkup(row_width=2)
+
+    kb.add(
+        types.InlineKeyboardButton(
+            "📺 Serial",
+            callback_data="add_serial_yes"
+        ),
+        types.InlineKeyboardButton(
+            "🎬 Oddiy kino",
+            callback_data="add_serial_no"
+        )
+    )
+
+    return kb
+
+
+def vip_keyboard():
+    kb = types.InlineKeyboardMarkup(row_width=2)
+
+    kb.add(
+        types.InlineKeyboardButton(
+            "👑 VIP",
+            callback_data="add_vip_yes"
+        ),
+        types.InlineKeyboardButton(
+            "🆓 Oddiy",
+            callback_data="add_vip_no"
+        )
+    )
+
+    return kb
+
+
+# =========================
+# /addmovie
+# =========================
 
 @bot.message_handler(commands=["addmovie"])
 def add_movie_start(message):
@@ -414,15 +452,16 @@ def add_movie_start(message):
     )
 
 
+# =========================
+# KINO NOMI
+# =========================
+
 @bot.message_handler(
     func=lambda m:
     m.from_user.id in admin_add_state
     and admin_add_state[m.from_user.id]["step"] == "name"
 )
 def add_movie_name(message):
-
-    if not is_admin(message.from_user.id):
-        return
 
     name = message.text.strip()
 
@@ -440,9 +479,14 @@ def add_movie_name(message):
 
     bot.reply_to(
         message,
-        "🔢 Endi kino kodini yozing:"
+        f"🎬 Nomi: {name}\n\n"
+        "2️⃣ Kino kodini yozing:"
     )
 
+
+# =========================
+# KINO KODI
+# =========================
 
 @bot.message_handler(
     func=lambda m:
@@ -451,14 +495,11 @@ def add_movie_name(message):
 )
 def add_movie_code(message):
 
-    if not is_admin(message.from_user.id):
-        return
-
     if not message.text.isdigit():
 
         bot.reply_to(
             message,
-            "❌ Kod faqat raqamlardan iborat bo‘lsin.\n\n"
+            "❌ Kod faqat raqam bo‘lsin.\n\n"
             "Masalan: 600"
         )
         return
@@ -474,21 +515,119 @@ def add_movie_code(message):
         )
         return
 
-    name = admin_add_state[message.from_user.id]["name"]
+    data = admin_add_state[message.from_user.id]
 
-    admin_add_state[message.from_user.id] = {
-        "step": "video",
-        "name": name,
-        "code": code
-    }
+    data["code"] = code
+    data["step"] = "type"
+
+    bot.send_message(
+        message.chat.id,
+        f"🎬 Kino: {data['name']}\n"
+        f"🔢 Kod: {code}\n\n"
+        "3️⃣ Bu serialmi yoki oddiy kinomi?",
+        reply_markup=add_movie_keyboard()
+    )
+
+
+# =========================
+# SERIAL / ODDIY
+# =========================
+
+@bot.callback_query_handler(
+    func=lambda call: call.data in (
+        "add_serial_yes",
+        "add_serial_no"
+    )
+)
+def choose_movie_type(call):
+
+    if not is_admin(call.from_user.id):
+        return
+
+    data = admin_add_state.get(call.from_user.id)
+
+    if not data:
+        bot.answer_callback_query(
+            call.id,
+            "❌ Buyruq muddati tugagan."
+        )
+        return
+
+    if call.data == "add_serial_yes":
+
+        data["serial"] = True
+        data["step"] = "parts_count"
+
+        bot.answer_callback_query(call.id)
+
+        bot.send_message(
+            call.message.chat.id,
+            "📺 Serial tanlandi.\n\n"
+            "4️⃣ Nechta qism bor?\n\n"
+            "Masalan: 10"
+        )
+
+    else:
+
+        data["serial"] = False
+        data["step"] = "video"
+
+        bot.answer_callback_query(call.id)
+
+        bot.send_message(
+            call.message.chat.id,
+            "🎬 Oddiy kino tanlandi.\n\n"
+            "5️⃣ Endi kino videosini yuboring."
+        )
+
+
+# =========================
+# QISM SONI
+# =========================
+
+@bot.message_handler(
+    func=lambda m:
+    m.from_user.id in admin_add_state
+    and admin_add_state[m.from_user.id]["step"] == "parts_count"
+)
+def add_parts_count(message):
+
+    if not message.text.isdigit():
+
+        bot.reply_to(
+            message,
+            "❌ Faqat raqam yozing.\n"
+            "Masalan: 6"
+        )
+        return
+
+    count = int(message.text)
+
+    if count < 1 or count > 100:
+
+        bot.reply_to(
+            message,
+            "❌ Qism soni 1 dan 100 gacha bo‘lsin."
+        )
+        return
+
+    data = admin_add_state[message.from_user.id]
+
+    data["parts_count"] = count
+    data["current_part"] = 1
+    data["parts"] = {}
+    data["step"] = "serial_video"
 
     bot.reply_to(
         message,
-        f"🎬 Kino: {name}\n"
-        f"🔢 Kod: {code}\n\n"
-        "3️⃣ Endi kinoning videosini shu yerga yuboring."
+        f"📺 Jami {count} ta qism.\n\n"
+        "▶️ 1-qism videosini yuboring."
     )
 
+
+# =========================
+# ODDIY KINO VIDEO
+# =========================
 
 @bot.message_handler(
     content_types=["video"],
@@ -496,66 +635,138 @@ def add_movie_code(message):
     m.from_user.id in admin_add_state
     and admin_add_state[m.from_user.id]["step"] == "video"
 )
-def add_movie_video(message):
-
-    if not is_admin(message.from_user.id):
-        return
+def add_normal_video(message):
 
     data = admin_add_state[message.from_user.id]
 
-    name = data["name"]
-    code = data["code"]
-    file_id = message.video.file_id
-
-    MOVIES[code] = (
-        name,
-        file_id
-    )
-
-    del admin_add_state[message.from_user.id]
-
-    bot.reply_to(
-        message,
-        "✅ KINO QO‘SHILDI!\n\n"
-        f"🎬 Nomi: {name}\n"
-        f"🔢 Kodi: {code}\n\n"
-        "Endi foydalanuvchi shu kodni yuborsa,\n"
-        "kino avtomatik chiqadi."
-    )
-    # =========================
-# START
-# =========================
-
-@bot.message_handler(commands=["start"])
-def start(message):
-
-    user_id = message.from_user.id
-
-    # ADMIN uchun kanal tekshirilmaydi
-    if not is_admin(user_id):
-
-        if not is_subscribed(user_id):
-
-            bot.send_message(
-                message.chat.id,
-                "👋 Botdan foydalanish uchun avval kanalga obuna bo‘ling.",
-                reply_markup=subscribe_keyboard()
-            )
-
-            return
-
-    kb = types.ReplyKeyboardMarkup(
-        resize_keyboard=True
-    )
-
-    kb.row("🎬 Kino", "👑 VIP")
+    data["file_id"] = message.video.file_id
+    data["step"] = "vip"
 
     bot.send_message(
         message.chat.id,
-        "🎬 Assalomu alaykum!\n\n"
-        "🔢 Kino kodini yuboring.",
-        reply_markup=kb
+        "✅ Video qabul qilindi.\n\n"
+        "6️⃣ Bu kino VIPmi yoki oddiymi?",
+        reply_markup=vip_keyboard()
     )
+
+
+# =========================
+# SERIAL QISMLARI
+# =========================
+
+@bot.message_handler(
+    content_types=["video"],
+    func=lambda m:
+    m.from_user.id in admin_add_state
+    and admin_add_state[m.from_user.id]["step"] == "serial_video"
+)
+def add_serial_video(message):
+
+    data = admin_add_state[message.from_user.id]
+
+    part = data["current_part"]
+
+    data["parts"][part] = message.video.file_id
+
+    total = data["parts_count"]
+
+    if part < total:
+
+        data["current_part"] += 1
+
+        bot.reply_to(
+            message,
+            f"✅ {part}-qism saqlandi.\n\n"
+            f"▶️ Endi {part + 1}-qism videosini yuboring."
+        )
+
+        return
+
+    data["step"] = "vip"
+
+    bot.send_message(
+        message.chat.id,
+        f"✅ Barcha {total} ta qism qabul qilindi!\n\n"
+        "6️⃣ Bu serial VIPmi yoki oddiymi?",
+        reply_markup=vip_keyboard()
+    )
+
+
+# =========================
+# VIP / ODDIY TANLASH
+# =========================
+
+@bot.callback_query_handler(
+    func=lambda call: call.data in (
+        "add_vip_yes",
+        "add_vip_no"
+    )
+)
+def choose_movie_vip(call):
+
+    if not is_admin(call.from_user.id):
+        return
+
+    data = admin_add_state.get(call.from_user.id)
+
+    if not data:
+        bot.answer_callback_query(
+            call.id,
+            "❌ Ma'lumot topilmadi."
+        )
+        return
+
+    vip = call.data == "add_vip_yes"
+
+    data["vip"] = vip
+
+    name = data["name"]
+    code = data["code"]
+
+    # =====================
+    # SERIALNI SAQLASH
+    # =====================
+
+    if data["serial"]:
+
+        SERIES[code] = {
+            "name": name,
+            "vip": vip,
+            "parts": data["parts"]
+        }
+
+        movie_type = "📺 Serial"
+
+    # =====================
+    # ODDIY KINONI SAQLASH
+    # =====================
+
+    else:
+
+        MOVIES[code] = (
+            name,
+            data["file_id"]
+        )
+
+        movie_type = "🎬 Oddiy kino"
+
+    del admin_add_state[call.from_user.id]
+
+    bot.answer_callback_query(
+        call.id,
+        "✅ Kino qo‘shildi!"
+    )
+
+    bot.send_message(
+        call.message.chat.id,
+        "🎉 KINO MUVAFFAQIYATLI QO‘SHILDI!\n\n"
+        f"🎬 Nomi: {name}\n"
+        f"🔢 Kodi: {code}\n"
+        f"{movie_type}\n"
+        f"👑 VIP: {'Ha' if vip else 'Yo‘q'}\n\n"
+        "✅ Endi foydalanuvchi kodni yuborsa,\n"
+        "kino avtomatik chiqadi."
+    )    
 
 
 # =========================

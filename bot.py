@@ -12,7 +12,7 @@ from telebot import types
 TOKEN = os.getenv("BOT_TOKEN")
 
 # O'Z TELEGRAM IDINGIZNI SHU YERGA YOZING
-ADMIN_ID = 123456789
+ADMIN_ID = 7927602820
 
 CHANNEL = "@Multfilmlar2026m"
 SECRET_WORD = "Ozodbek_941"

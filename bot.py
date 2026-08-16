@@ -26,28 +26,49 @@ if not TOKEN:
 bot = telebot.TeleBot(TOKEN)
 
 # =========================
-# START — TIL TANLASH
+# TIL TANLASH + START
 # =========================
+
+user_languages = {}
+
+
+def language_keyboard():
+
+    kb = types.InlineKeyboardMarkup(row_width=1)
+
+    kb.add(
+        types.InlineKeyboardButton(
+            "🇺🇿 O‘zbek tili",
+            callback_data="lang_uz"
+        )
+    )
+
+    kb.add(
+        types.InlineKeyboardButton(
+            "🇷🇺 Русский",
+            callback_data="lang_ru"
+        )
+    )
+
+    kb.add(
+        types.InlineKeyboardButton(
+            "🇬🇧 English",
+            callback_data="lang_en"
+        )
+    )
+
+    return kb
+
 
 @bot.message_handler(commands=["start"])
 def start(message):
 
-    user_id = message.from_user.id
-
-    # Admin uchun ham til tanlash chiqadi
     bot.send_message(
         message.chat.id,
-        "🌐 Tilni tanlang:\n\n"
-        "🇺🇿 O‘zbek tili\n"
-        "🇷🇺 Русский\n"
-        "🇬🇧 English",
+        "🌐 Tilni tanlang:",
         reply_markup=language_keyboard()
     )
 
-
-# =========================
-# TIL TANLASH
-# =========================
 
 @bot.callback_query_handler(
     func=lambda call: call.data.startswith("lang_")
@@ -55,6 +76,7 @@ def start(message):
 def select_language(call):
 
     user_id = call.from_user.id
+
     lang = call.data.replace("lang_", "")
 
     user_languages[user_id] = lang
@@ -75,17 +97,23 @@ def select_language(call):
 
             return
 
-    # Asosiy menyu
+    # =========================
+    # ASOSIY MENYU
+    # =========================
+
     kb = types.ReplyKeyboardMarkup(
         resize_keyboard=True
     )
 
-    kb.row("🎬 Kino", "👑 VIP")
+    kb.row(
+        "🎬 Kino",
+        "👑 VIP"
+    )
 
     if lang == "uz":
 
         text = (
-            "🇺🇿 Til o‘zbek tiliga o‘zgartirildi!\n\n"
+            "🇺🇿 O‘zbek tili tanlandi!\n\n"
             "🎬 Assalomu alaykum!\n\n"
             "🔢 Kino kodini yuboring."
         )
@@ -93,14 +121,14 @@ def select_language(call):
     elif lang == "ru":
 
         text = (
-            "🇷🇺 Язык изменён на русский!\n\n"
+            "🇷🇺 Русский язык выбран!\n\n"
             "🎬 Отправьте код фильма."
         )
 
     else:
 
         text = (
-            "🇬🇧 Language changed to English!\n\n"
+            "🇬🇧 English selected!\n\n"
             "🎬 Send the movie code."
         )
 

@@ -1,13 +1,15 @@
 import telebot
 from telebot import types
 
-TOKEN = "BU_YERGA_BOTFATHER_TOKENINGNI_QOY"
+TOKEN = "8718939657: AAEvmvXJ4WrAL_CBOiAIH3xa-
+h4vqhulIb0
+"
 CHANNEL = "@Multfilmlar2026m"
 
 bot = telebot.TeleBot(TOKEN)
 
 # O'Z TELEGRAM ID RAQAMINGNI SHU YERGA YOZ
-ADMIN_ID = 123456789
+ADMIN_ID = 7927602820
 
 
 def subscribed(user_id):

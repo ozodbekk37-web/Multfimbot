@@ -189,7 +189,14 @@ CREATE TABLE IF NOT EXISTS admin_movies (
 
 
 db.commit()
+cur.execute("""
+CREATE TABLE IF NOT EXISTS required_channels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    channel TEXT UNIQUE NOT NULL
+)
+""")
 
+db.commit()
 
 # =========================
 # ADMIN KINO HOLATI
@@ -477,6 +484,211 @@ def subscribe_keyboard():
     )
 
     return kb
+    # =========================
+# KANAL QO‘SHISH / O‘CHIRISH
+# FAQAT ADMIN
+# =========================
+
+channel_add_state = {}
+
+
+# /channels
+@bot.message_handler(commands=["channels"])
+def channels_menu(message):
+
+    if not is_admin(message.from_user.id):
+        return
+
+    kb = types.InlineKeyboardMarkup()
+
+    kb.add(
+        types.InlineKeyboardButton(
+            "➕ Kanal qo‘shish",
+            callback_data="channel_add"
+        )
+    )
+
+    kb.add(
+        types.InlineKeyboardButton(
+            "🗑 Kanal o‘chirish",
+            callback_data="channel_delete"
+        )
+    )
+
+    bot.send_message(
+        message.chat.id,
+        "📢 Kanal boshqaruvi:",
+        reply_markup=kb
+    )
+
+
+# =========================
+# KANAL QO‘SHISH
+# =========================
+
+@bot.callback_query_handler(
+    func=lambda call: call.data == "channel_add"
+)
+def channel_add(call):
+
+    if not is_admin(call.from_user.id):
+        return
+
+    channel_add_state[call.from_user.id] = True
+
+    bot.answer_callback_query(call.id)
+
+    bot.send_message(
+        call.message.chat.id,
+        "➕ Kanal qo‘shish\n\n"
+        "Kanal username'ini yuboring.\n\n"
+        "Masalan:\n"
+        "@Multfilmlar2026m"
+    )
+
+
+@bot.message_handler(
+    func=lambda m: m.from_user.id in channel_add_state
+)
+def save_channel(message):
+
+    if not is_admin(message.from_user.id):
+        return
+
+    channel = message.text.strip()
+
+    if not channel.startswith("@"):
+        bot.reply_to(
+            message,
+            "❌ @ bilan yozing.\n\n"
+            "Masalan: @Multfilmlar2026m"
+        )
+        return
+
+    try:
+
+        cur.execute(
+            "INSERT INTO required_channels (channel) VALUES (?)",
+            (channel,)
+        )
+
+        db.commit()
+
+        del channel_add_state[message.from_user.id]
+
+        bot.reply_to(
+            message,
+            f"✅ Kanal qo‘shildi!\n\n"
+            f"📢 {channel}"
+        )
+
+    except sqlite3.IntegrityError:
+
+        bot.reply_to(
+            message,
+            "❌ Bu kanal allaqachon qo‘shilgan."
+        )
+
+
+# =========================
+# KANAL O‘CHIRISH
+# =========================
+
+@bot.callback_query_handler(
+    func=lambda call: call.data == "channel_delete"
+)
+def channel_delete(call):
+
+    if not is_admin(call.from_user.id):
+        return
+
+    cur.execute(
+        "SELECT id, channel FROM required_channels"
+    )
+
+    channels = cur.fetchall()
+
+    if not channels:
+
+        bot.answer_callback_query(call.id)
+
+        bot.send_message(
+            call.message.chat.id,
+            "📭 Hozircha kanal qo‘shilmagan."
+        )
+
+        return
+
+    kb = types.InlineKeyboardMarkup()
+
+    for channel_id, channel in channels:
+
+        kb.add(
+            types.InlineKeyboardButton(
+                f"🗑 {channel}",
+                callback_data=f"delete_channel:{channel_id}"
+            )
+        )
+
+    bot.answer_callback_query(call.id)
+
+    bot.send_message(
+        call.message.chat.id,
+        "🗑 O‘chirmoqchi bo‘lgan kanalni tanlang:",
+        reply_markup=kb
+    )
+
+
+# =========================
+# TANLANGAN KANALNI O‘CHIRISH
+# =========================
+
+@bot.callback_query_handler(
+    func=lambda call: call.data.startswith("delete_channel:")
+)
+def delete_channel(call):
+
+    if not is_admin(call.from_user.id):
+        return
+
+    channel_id = int(
+        call.data.split(":")[1]
+    )
+
+    cur.execute(
+        "SELECT channel FROM required_channels WHERE id=?",
+        (channel_id,)
+    )
+
+    row = cur.fetchone()
+
+    if not row:
+
+        bot.answer_callback_query(
+            call.id,
+            "❌ Kanal topilmadi!"
+        )
+        return
+
+    channel = row[0]
+
+    cur.execute(
+        "DELETE FROM required_channels WHERE id=?",
+        (channel_id,)
+    )
+
+    db.commit()
+
+    bot.answer_callback_query(
+        call.id,
+        "✅ Kanal o‘chirildi!"
+    )
+
+    bot.send_message(
+        call.message.chat.id,
+        f"🗑 Kanal o‘chirildi:\n\n"
+        f"📢 {channel}"
+    )
 # =========================
 # ADMIN KINO QO‘SHISH
 # =========================

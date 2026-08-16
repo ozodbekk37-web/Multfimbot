@@ -488,15 +488,14 @@ def subscribe_keyboard():
     )
 
     return kb
-    # =========================
+    
+# =========================
 # KANAL QO‘SHISH / O‘CHIRISH
 # FAQAT ADMIN
 # =========================
 
 channel_add_state = {}
 
-
-# /channels
 @bot.message_handler(commands=["channels"])
 def channels_menu(message):
 
@@ -525,34 +524,64 @@ def channels_menu(message):
         reply_markup=kb
     )
 
-
 # =========================
 # KANAL QO‘SHISH
 # =========================
+
+@bot.callback_query_handler(
+    func=lambda call: call.data == "channel_add"
+)
+def channel_add(call):
+
+    if not is_admin(call.from_user.id):
+        return
+
+    channel_add_state[call.from_user.id] = True
+
+    bot.answer_callback_query(call.id)
+
+    bot.send_message(
+        call.message.chat.id,
+        "➕ Kanal qo‘shish\n\n"
+        "Ochiq kanal bo‘lsa:\n"
+        "@kanal_username\n\n"
+        "🔒 Maxfiy kanal bo‘lsa:\n"
+        "-1001234567890 ko‘rinishidagi kanal ID sini yuboring."
+    )
+
+# =========================
+# KANALNI SAQLASH
+# =========================
+
 @bot.message_handler(
-    func=lambda m: m.from_user.id in channel_add_state
+    func=lambda m:
+        m.from_user.id in channel_add_state
 )
 def save_channel(message):
 
     if not is_admin(message.from_user.id):
         return
 
+    if not message.text:
+        bot.reply_to(
+            message,
+            "❌ Kanal username yoki ID yuboring."
+        )
+        return
+
     channel = message.text.strip()
 
-    # Ochiq kanal: @username
-    # Maxfiy kanal: -1001234567890
-
+    # Ochiq kanal yoki maxfiy kanal ID
     if not (
         channel.startswith("@")
         or channel.startswith("-100")
     ):
-
         bot.reply_to(
             message,
-            "❌ Kanal noto‘g‘ri.\n\n"
-            "📢 Ochiq kanal:\n"
-            "@Multfilmlar2026m\n\n"
-            "🔒 Maxfiy kanal:\n"
+            "❌ Noto‘g‘ri format.\n\n"
+            "Ochiq kanal:\n"
+            "@kanal_username\n\n"
+            "Maxfiy kanal:\n"
             "-1001234567890"
         )
         return
@@ -560,7 +589,10 @@ def save_channel(message):
     try:
 
         cur.execute(
-            "INSERT INTO required_channels (channel) VALUES (?)",
+            """
+            INSERT INTO required_channels (channel)
+            VALUES (?)
+            """,
             (channel,)
         )
 
@@ -570,7 +602,7 @@ def save_channel(message):
 
         bot.reply_to(
             message,
-            f"✅ Kanal qo‘shildi!\n\n"
+            "✅ Kanal muvaffaqiyatli qo‘shildi!\n\n"
             f"📢 {channel}"
         )
 
@@ -599,15 +631,14 @@ def channel_delete(call):
 
     channels = cur.fetchall()
 
-    if not channels:
+    bot.answer_callback_query(call.id)
 
-        bot.answer_callback_query(call.id)
+    if not channels:
 
         bot.send_message(
             call.message.chat.id,
             "📭 Hozircha kanal qo‘shilmagan."
         )
-
         return
 
     kb = types.InlineKeyboardMarkup()
@@ -621,21 +652,19 @@ def channel_delete(call):
             )
         )
 
-    bot.answer_callback_query(call.id)
-
     bot.send_message(
         call.message.chat.id,
         "🗑 O‘chirmoqchi bo‘lgan kanalni tanlang:",
         reply_markup=kb
     )
 
-
 # =========================
-# TANLANGAN KANALNI O‘CHIRISH
+# KANALNI O‘CHIRISH
 # =========================
 
 @bot.callback_query_handler(
-    func=lambda call: call.data.startswith("delete_channel:")
+    func=lambda call:
+        call.data.startswith("delete_channel:")
 )
 def delete_channel(call):
 
@@ -647,7 +676,11 @@ def delete_channel(call):
     )
 
     cur.execute(
-        "SELECT channel FROM required_channels WHERE id=?",
+        """
+        SELECT channel
+        FROM required_channels
+        WHERE id=?
+        """,
         (channel_id,)
     )
 
@@ -664,7 +697,10 @@ def delete_channel(call):
     channel = row[0]
 
     cur.execute(
-        "DELETE FROM required_channels WHERE id=?",
+        """
+        DELETE FROM required_channels
+        WHERE id=?
+        """,
         (channel_id,)
     )
 
@@ -677,7 +713,7 @@ def delete_channel(call):
 
     bot.send_message(
         call.message.chat.id,
-        f"🗑 Kanal o‘chirildi:\n\n"
+        "🗑 Kanal o‘chirildi!\n\n"
         f"📢 {channel}"
     )
 # =========================

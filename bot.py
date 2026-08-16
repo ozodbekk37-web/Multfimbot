@@ -25,34 +25,97 @@ if not TOKEN:
 
 bot = telebot.TeleBot(TOKEN)
 
-
 # =========================
-# TILLAR
+# START — TIL TANLASH
 # =========================
 
-user_languages = {}
+@bot.message_handler(commands=["start"])
+def start(message):
 
+    user_id = message.from_user.id
 
-def language_keyboard():
-
-    kb = types.InlineKeyboardMarkup(row_width=1)
-
-    kb.add(
-        types.InlineKeyboardButton(
-            "🇺🇿 O‘zbek tili",
-            callback_data="lang_uz"
-        ),
-        types.InlineKeyboardButton(
-            "🇷🇺 Русский",
-            callback_data="lang_ru"
-        ),
-        types.InlineKeyboardButton(
-            "🇬🇧 English",
-            callback_data="lang_en"
-        )
+    # Admin uchun ham til tanlash chiqadi
+    bot.send_message(
+        message.chat.id,
+        "🌐 Tilni tanlang:\n\n"
+        "🇺🇿 O‘zbek tili\n"
+        "🇷🇺 Русский\n"
+        "🇬🇧 English",
+        reply_markup=language_keyboard()
     )
 
-    return kb
+
+# =========================
+# TIL TANLASH
+# =========================
+
+@bot.callback_query_handler(
+    func=lambda call: call.data.startswith("lang_")
+)
+def select_language(call):
+
+    user_id = call.from_user.id
+    lang = call.data.replace("lang_", "")
+
+    user_languages[user_id] = lang
+
+    bot.answer_callback_query(call.id)
+
+    # Kanal tekshiruvi
+    if not is_admin(user_id):
+
+        if not is_subscribed(user_id):
+
+            bot.edit_message_text(
+                "👋 Botdan foydalanish uchun avval kanalga obuna bo‘ling.",
+                call.message.chat.id,
+                call.message.message_id,
+                reply_markup=subscribe_keyboard()
+            )
+
+            return
+
+    # Asosiy menyu
+    kb = types.ReplyKeyboardMarkup(
+        resize_keyboard=True
+    )
+
+    kb.row("🎬 Kino", "👑 VIP")
+
+    if lang == "uz":
+
+        text = (
+            "🇺🇿 Til o‘zbek tiliga o‘zgartirildi!\n\n"
+            "🎬 Assalomu alaykum!\n\n"
+            "🔢 Kino kodini yuboring."
+        )
+
+    elif lang == "ru":
+
+        text = (
+            "🇷🇺 Язык изменён на русский!\n\n"
+            "🎬 Отправьте код фильма."
+        )
+
+    else:
+
+        text = (
+            "🇬🇧 Language changed to English!\n\n"
+            "🎬 Send the movie code."
+        )
+
+    bot.edit_message_text(
+        text,
+        call.message.chat.id,
+        call.message.message_id
+    )
+
+    bot.send_message(
+        call.message.chat.id,
+        "👇 Menyu:",
+        reply_markup=kb
+    )
+
 
 
 # =========================

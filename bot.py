@@ -858,7 +858,74 @@ def choose_movie_vip(call):
         "✅ Endi foydalanuvchi kodni yuborsa,\n"
         "kino avtomatik chiqadi."
     )    
+# =========================
+# KINO O‘CHIRISH — FAQAT ADMIN
+# =========================
 
+@bot.message_handler(commands=["delmovie"])
+def delete_movie_start(message):
+
+    if not is_admin(message.from_user.id):
+        bot.reply_to(
+            message,
+            "❌ Bu buyruq faqat admin uchun."
+        )
+        return
+
+    bot.reply_to(
+        message,
+        "🗑 Kino o‘chirish\n\n"
+        "O‘chirmoqchi bo‘lgan kino kodini yuboring.\n\n"
+        "Masalan: 600"
+    )
+
+
+@bot.message_handler(
+    func=lambda m:
+    is_admin(m.from_user.id)
+    and m.text
+    and m.text.strip().isdigit()
+)
+def delete_movie(message):
+
+    code = int(message.text.strip())
+
+    # Oddiy kino
+    if code in MOVIES:
+
+        name = MOVIES[code][0]
+
+        del MOVIES[code]
+
+        bot.reply_to(
+            message,
+            f"✅ Kino o‘chirildi!\n\n"
+            f"🎬 Nomi: {name}\n"
+            f"🔢 Kodi: {code}"
+        )
+
+        return
+
+    # Serial
+    if code in SERIES:
+
+        name = SERIES[code]["name"]
+
+        del SERIES[code]
+
+        bot.reply_to(
+            message,
+            f"✅ Serial o‘chirildi!\n\n"
+            f"📺 Nomi: {name}\n"
+            f"🔢 Kodi: {code}"
+        )
+
+        return
+
+    bot.reply_to(
+        message,
+        "❌ Bunday kodli kino yoki serial topilmadi."
+    )
 
 # =========================
 # OBUNANI TEKSHIRISH

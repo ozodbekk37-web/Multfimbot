@@ -197,58 +197,157 @@ MOVIES = {
         "Mitchellar oilasi",
         "BAACAgIAAxkBAANeaoGhZ-UyVWtmVH8YBSwfnIKMXhYAAoYMAAJG0KBJ5uErTh6AWF49BA"
     ),
-
-    898: (
-        "Forevergreen",
-        "BAACAgIAAxkBAAM2aoGgAAF66AxNisrHP-3cLf1CcpKqAAKmjQACysR4S_HxJK8HlmZ0PQQ"
-    ),
-}
-
-
-# =========================
+ # =========================
 # QISMLI KINOLAR
 # =========================
 
 SERIES = {
 
+    # 👑 VIP — Uyda yolg'iz
     877: {
         "name": "Uyda yolg‘iz",
+        "vip": True,
         "parts": {
             1: "BAACAgQAAxkBAANqaoGhfSqTN6tMkXzjmDVC1vMe8CkAAmoVAALnvcBST6W9I6uxkyU9BA",
             2: "BAACAgQAAxkBAANoaoGheY531eNvphuYsS2kRJ3CcPUAAuYXAAIsqoFTOUCh4_8edZ09BA",
             3: "BAACAgQAAxkBAANmaoGhdtibd2U-DQuXpkn6JrfylHsAAmoPAALSFhBThGVhDHR0rMk9BA",
             4: "BAACAgQAAxkBAANkaoGhcYd3FH9zWa-mar8R6lBCKpUAApEPAALSFhBTxjwrWTHmL_09BA",
             5: "BAACAgQAAxkBAANiaoGhboPWWP_P3_BlbuPWTxMjxQcAAqQPAALSFhBTzMhVyxl21VA9BA",
-            6: "BAACAgQAAxkBAANgaoGha2qdQlePrF26ZW0_lb0UKRIAArMPAALSFhBTphAoKddldx49BA",
+            6: "BAACAgQAAxkBAANgaoGha2qdQlePrF26ZW0_lb0UKRIAArMPAALSFhBTphAoKddldx49BA"
         }
     },
 
-    511: {
-        "name": "Boshqotirma",
-        "parts": {
-            1: "BAACAgQAAxkBAAM8aoGhEuI_L2vnuq0qNZARdDdb1CIAAvgdAAKF7RhRygoFd9mj2OI9BA",
-            2: "BAACAgQAAxkBAAM6aoGhDgF05mkjcx6r-ZhB2-G9UhEAAv0dAAKF7RhR52gyYRQzt-o9BA",
-        }
-    },
-
-    519: {
+    # 👑 VIP — Sonik
+    521: {
         "name": "Sonik",
+        "vip": True,
         "parts": {
             1: "BAACAgQAAxkBAANMaoGhMtXTYcsu8viV4pJncAfMO3MAAgsWAAK1LYBSnO98o-jZK-k9BA",
             2: "BAACAgQAAxkBAANKaoGhLysylKniL854NCQV4YYOUfMAAj8WAAK1LYBSYWzKmGAdRbc9BA",
-            3: "BAACAgQAAxkBAANIaoGhKxfPhov1oim7UcXliPSn30QAAlIWAAK1LYBS6cqLhkUURJo9BA",
+            3: "BAACAgQAAxkBAANIaoGhKxfPhov1oim7UcXliPSn30QAAlIWAAK1LYBS6cqLhkUURJo9BA"
         }
     },
 
-    5201: {
+    # Boshqotirma
+    522: {
+        "name": "Boshqotirma",
+        "vip": False,
+        "parts": {
+            1: "BAACAgQAAxkBAAM8aoGhEuI_L2vnuq0qNZARdDdb1CIAAvgdAAKF7RhRygoFd9mj2OI9BA",
+            2: "BAACAgQAAxkBAAM6aoGhDgF05mkjcx6r-ZhB2-G9UhEAAv0dAAKF7RhR52gyYRQzt-o9BA"
+        }
+    },
+
+    # O‘rgimchak odam
+    523: {
         "name": "O‘rgimchak odam",
+        "vip": False,
         "parts": {
             1: "BAACAgQAAxkBAANSaoGhS520vtdYVvnZL5cOPPjYIZ4AAh8VAAIlw-BR1LdmMBWZ7MU9BA",
-            2: "BAACAgQAAxkBAANQaoGhR5Lcvddbr6gBy5_zM4DzZ2EAAv0UAAIlw-BRByc1Mw4yZ5s9BA",
+            2: "BAACAgQAAxkBAANQaoGhR5Lcvddbr6gBy5_zM4DzZ2EAAv0UAAIlw-BRByc1Mw4yZ5s9BA"
         }
     }
 }
 
+
+# =========================
+# QISM TUGMALARI
+# =========================
+
+def series_buttons(code):
+
+    data = SERIES[code]
+
+    kb = types.InlineKeyboardMarkup()
+
+    for part in data["parts"]:
+        kb.add(
+            types.InlineKeyboardButton(
+                f"▶️ {part}-qism",
+                callback_data=f"part:{code}:{part}"
+            )
+        )
+
+    return kb
+
+
+def send_series_menu(chat_id, code):
+
+    data = SERIES[code]
+
+    title = f"👑 {data['name']} — VIP" if data["vip"] else f"🎬 {data['name']}"
+
+    bot.send_message(
+        chat_id,
+        f"{title}\n\n👇 Qismni tanlang:",
+        reply_markup=series_buttons(code)
+    )
+
+
+# =========================
+# QISMNI YUBORISH
+# =========================
+
+@bot.callback_query_handler(
+    func=lambda call: call.data.startswith("part:")
+)
+def send_part(call):
+
+    _, code, part = call.data.split(":")
+
+    code = int(code)
+    part = int(part)
+
+    if code not in SERIES:
+        bot.answer_callback_query(
+            call.id,
+            "❌ Kino topilmadi!"
+        )
+        return
+
+    data = SERIES[code]
+
+    # 👑 VIP tekshiruvi
+    if data["vip"]:
+
+        if call.from_user.id != ADMIN_ID:
+
+            if not is_vip(call.from_user.id):
+
+                bot.answer_callback_query(
+                    call.id,
+                    "🔒 Bu qism VIP uchun!",
+                    show_alert=True
+                )
+
+                bot.send_message(
+                    call.message.chat.id,
+                    "🔒 Bu kino VIP uchun yopiq.\n\n"
+                    "👑 VIP olish uchun «👑 VIP» tugmasini bosing."
+                )
+
+                return
+
+    if part not in data["parts"]:
+        bot.answer_callback_query(
+            call.id,
+            "❌ Bu qism topilmadi!"
+        )
+        return
+
+    bot.answer_callback_query(
+        call.id,
+        f"▶️ {part}-qism"
+    )
+
+    bot.send_video(
+        call.message.chat.id,
+        data["parts"][part],
+        caption=(
+            f"🎬 {data['name']}\n"
+            f"▶️ {part}-qism"
+        )
+    )
 
 # =========================
 # VIP

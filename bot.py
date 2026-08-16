@@ -189,6 +189,10 @@ CREATE TABLE IF NOT EXISTS admin_movies (
 
 
 db.commit()
+# =========================
+# MAJBURIY KANALLAR
+# =========================
+
 cur.execute("""
 CREATE TABLE IF NOT EXISTS required_channels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

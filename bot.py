@@ -23,6 +23,92 @@ if not TOKEN:
     raise ValueError("BOT_TOKEN topilmadi!")
 
 bot = telebot.TeleBot(TOKEN)
+# =========================
+# TILLAR
+# =========================
+
+user_languages = {}
+
+def language_keyboard():
+    kb = types.InlineKeyboardMarkup(row_width=1)
+
+    kb.add(
+        types.InlineKeyboardButton(
+            "🇺🇿 O‘zbek tili",
+            callback_data="lang_uz"
+        ),
+        types.InlineKeyboardButton(
+            "🇷🇺 Русский",
+            callback_data="lang_ru"
+        ),
+        types.InlineKeyboardButton(
+            "🇬🇧 English",
+            callback_data="lang_en"
+        )
+    )
+
+    return kb
+
+
+# =========================
+# /START
+# =========================
+
+@bot.message_handler(commands=["start"])
+def start(message):
+
+    user_id = message.from_user.id
+
+    # Til tanlash
+    bot.send_message(
+        message.chat.id,
+        "🌐 Tilni tanlang / Выберите язык / Choose language:",
+        reply_markup=language_keyboard()
+    )
+
+
+# =========================
+# TIL TANLASH
+# =========================
+
+@bot.callback_query_handler(
+    func=lambda call: call.data.startswith("lang_")
+)
+def select_language(call):
+
+    user_id = call.from_user.id
+    lang = call.data.replace("lang_", "")
+
+    user_languages[user_id] = lang
+
+    bot.answer_callback_query(call.id)
+
+    if lang == "uz":
+
+        text = (
+            "🇺🇿 Til o‘zbek tiliga o‘zgartirildi!\n\n"
+            "🎬 Kino kodini yuboring."
+        )
+
+    elif lang == "ru":
+
+        text = (
+            "🇷🇺 Язык изменён на русский!\n\n"
+            "🎬 Отправьте код фильма."
+        )
+
+    else:
+
+        text = (
+            "🇬🇧 Language changed to English!\n\n"
+            "🎬 Send the movie code."
+        )
+
+    bot.edit_message_text(
+        text,
+        call.message.chat.id,
+        call.message.message_id
+    )
 
 # =========================
 # DATABASE

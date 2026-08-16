@@ -26,3 +26,5 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: python bot.py
+TOKEN = "8718939657: AAEvmvXJ4WrAL_CBOiAIH3xa-
+h4vqhulIb0"

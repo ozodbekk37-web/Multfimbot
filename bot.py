@@ -104,3 +104,7 @@ def serial(message):
 
 
 bot.infinity_polling() 
+@bot.message_handler(content_types=["video"])
+def get_file_id(message):
+    file_id = message.video.file_id
+    bot.reply_to(message, f"File ID:\n{file_id}")

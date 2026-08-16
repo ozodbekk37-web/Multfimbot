@@ -15,7 +15,7 @@ TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = 7927602820
 
 CHANNEL = "@Multfilmlar2026m"
-SECRET_WORD = "Ozodbek_941"
+
 
 UZUM_CARD = "4916990361459941"
 
@@ -48,7 +48,21 @@ def language_keyboard():
     )
 
     return kb
+bot = telebot.TeleBot(TOKEN)
 
+special_users = set()
+SECRET_WORD = "Ozodbek_941"
+
+@bot.message_handler(func=lambda message: message.text and message.text.strip() == SECRET_WORD)
+def special_word(message):
+    user_id = message.from_user.id
+    special_users.add(user_id)
+
+    bot.send_message(
+        message.chat.id,
+        "✅ Maxsus so‘z to‘g‘ri!\n\n"
+        "🎬 Sizga kanal obunasi va VIP tekshiruvi kerak emas."
+    )
 
 # =========================
 # /START

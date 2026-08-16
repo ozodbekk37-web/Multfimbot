@@ -525,28 +525,6 @@ def channels_menu(message):
 # =========================
 # KANAL QO‘SHISH
 # =========================
-
-@bot.callback_query_handler(
-    func=lambda call: call.data == "channel_add"
-)
-def channel_add(call):
-
-    if not is_admin(call.from_user.id):
-        return
-
-    channel_add_state[call.from_user.id] = True
-
-    bot.answer_callback_query(call.id)
-
-    bot.send_message(
-        call.message.chat.id,
-        "➕ Kanal qo‘shish\n\n"
-        "Kanal username'ini yuboring.\n\n"
-        "Masalan:\n"
-        "@Multfilmlar2026m"
-    )
-
-
 @bot.message_handler(
     func=lambda m: m.from_user.id in channel_add_state
 )
@@ -557,11 +535,21 @@ def save_channel(message):
 
     channel = message.text.strip()
 
-    if not channel.startswith("@"):
+    # Ochiq kanal: @username
+    # Maxfiy kanal: -1001234567890
+
+    if not (
+        channel.startswith("@")
+        or channel.startswith("-100")
+    ):
+
         bot.reply_to(
             message,
-            "❌ @ bilan yozing.\n\n"
-            "Masalan: @Multfilmlar2026m"
+            "❌ Kanal noto‘g‘ri.\n\n"
+            "📢 Ochiq kanal:\n"
+            "@Multfilmlar2026m\n\n"
+            "🔒 Maxfiy kanal:\n"
+            "-1001234567890"
         )
         return
 
@@ -588,7 +576,6 @@ def save_channel(message):
             message,
             "❌ Bu kanal allaqachon qo‘shilgan."
         )
-
 
 # =========================
 # KANAL O‘CHIRISH

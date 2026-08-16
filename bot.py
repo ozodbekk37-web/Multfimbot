@@ -101,10 +101,10 @@ def serial(message):
         message.chat.id,
         "📺 Serial bo‘limi\n\nHozircha serial qo‘shilmagan."
     )
-
-
-bot.infinity_polling() 
 @bot.message_handler(content_types=["video"])
 def get_file_id(message):
     file_id = message.video.file_id
     bot.reply_to(message, f"File ID:\n{file_id}")
+
+bot.infinity_polling() 
+

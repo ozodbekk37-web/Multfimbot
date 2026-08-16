@@ -474,30 +474,36 @@ def is_vip(user_id):
 
     return True
 
-
 # =========================
-# KANAL TUGMASI
+# BARCHA MAJBURIY KANAL TUGMALARI
 # =========================
 
 def subscribe_keyboard():
 
     kb = types.InlineKeyboardMarkup()
 
-    kb.add(
-        types.InlineKeyboardButton(
-            "📢 Kanalga obuna bo‘lish",
-            url="https://t.me/Multfilmlar2026m"
-        )
-    )
+    channels = get_required_channels()
+
+    for channel_id, channel, invite_link in channels:
+
+        if invite_link:
+
+            kb.add(
+                types.InlineKeyboardButton(
+                    f"📢 {channel}",
+                    url=invite_link
+                )
+            )
 
     kb.add(
         types.InlineKeyboardButton(
-            "✅ Tekshirish",
+            "✅ Barchasini tekshirish",
             callback_data="check_sub"
         )
     )
 
     return kb
+
  # =========================
 
 # KANAL BOSHQARUVI

@@ -1,9 +1,7 @@
 import telebot
 from telebot import types
-
-TOKEN = "8718939657: AAEvmvXJ4WrAL_CBOiAIH3xa-
-h4vqhulIb0
-"
+import os
+TOKEN = os.getenv("BOT_TOKEN")
 CHANNEL = "@Multfilmlar2026m"
 
 bot = telebot.TeleBot(TOKEN)

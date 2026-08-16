@@ -17,7 +17,7 @@ jobs:
       - name: Python o'rnatish
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11" red
 
       - name: Kutubxonani o'rnatish
         run: pip install pyTelegramBotAPI
@@ -26,5 +26,3 @@ jobs:
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: python bot.py
-TOKEN = "8718939657: AAEvmvXJ4WrAL_CBOiAIH3xa-
-h4vqhulIb0"
